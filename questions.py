@@ -23,11 +23,20 @@ names a target of "4 of 5", and four of three is not a thing.
 
 QUESTIONS = [
     # {"question": "...", "expects": "..."},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
-    {"question": "", "expects": ""},
+    # Single-paragraph sources: any chunker handles these, so they test
+    # retrieval and generation rather than chunking.
+    {"question": "How late can you declare a course pass/fail?",
+     "expects": "week eight"},
+    {"question": "What happens to leftover dining dollars at the end of spring semester?",
+     "expects": "disappear"},
+    {"question": "How is the housing lottery order decided for juniors and seniors?",
+     "expects": "credit hours"},
+    # Multi-paragraph sources: each holds several independent facts, so a
+    # chunker that splits them mid-document will break one of these.
+    {"question": "How often does the campus shuttle run on weekends?",
+     "expects": "40 minutes"},
+    {"question": "Why is the library basement full by mid-morning?",
+     "expects": "outlets"},
 ]
 
 # Questions from a different world entirely. Your gate should refuse all five.
