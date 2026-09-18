@@ -54,8 +54,7 @@ failure than build into the target.
 
 ## 3. The relevance gate stops out-of-corpus questions
 
-When I ask a question my documents clearly don't cover, the relevance gate
-stops it and the system returns "I don't have enough information about that" —
+When I ask a question my documents clearly don't cover, the relevance gate stops it and the system returns "I don't have enough information about that" —
 in at least 4 of 5 tries.
 
 <!-- The five questions are the ones in `OUT_OF_SCOPE` at the bottom of
@@ -68,12 +67,8 @@ in at least 4 of 5 tries.
 <!-- What did your distances look like when you set the cutoff in Milestone 4?
      Was there a clean gap, or did the two groups overlap? -->
 
-The two groups don't overlap: in-scope came back at 0.202–0.411 and the five
-`OUT_OF_SCOPE` questions at 0.825–0.934, a 0.41-wide empty band with the 0.6
-cutoff near its middle, so I kept 0.6 because I measured it rather than assumed
-it. With a gap that clean I expect 5 of 5 and claim 4 because these five
-questions are trivially far away — the real risk is a question that sounds like
-my corpus but isn't in it, and the spare failure is for that.
+The two groups don't overlap: in-scope came back at 0.202–0.411 and the five `OUT_OF_SCOPE` questions at 0.825–0.934, a 0.41-wide empty band with the 0.6
+cutoff near its middle, so I kept 0.6 because I measured it rather than assumed it. With a gap that clean I expect 5 of 5 and claim 4 because these five questions are trivially far away — the real risk is a question that sounds like my corpus but isn't in it, and the spare failure is for that.
 
 ---
 

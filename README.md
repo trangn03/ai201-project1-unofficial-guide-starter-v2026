@@ -27,10 +27,15 @@
 
      Milestone 5. -->
 
+I built this over `campus_life`: about 88 short, first-person posts on student life at one college, covering course workloads and exam formats, deadlines for pass/fail and add/drop, dining hall wait times, dorm laundry costs, parking and the housing lottery. It answers specific factual questions ("how often
+does the shuttle run on weekends," "how late can I declare pass/fail") by retrieving the post that actually contains the answer and asking a model to answer from that post alone, rather than from anything it already knows. The
+corpus reads like a pile of short reviews rather than a handbook: most posts are one to three paragraphs, and the answer to a well-formed question is usually one sentence, so a good answer here is short and cites one file, not
+several. 
+
 ## Chunking Strategy
 
-**Chunk size:**
-**Overlap:**
+**Chunk size:** 350 characters, used as a ceiling, not a fixed window
+**Overlap:** 0
 
 <!-- What about YOUR documents made you pick these numbers? Short posts and
      long sectioned guides don't want the same chunking, and "800 seemed
@@ -41,6 +46,25 @@
      more than pretending you got it right first time.
 
      Milestone 3. -->
+
+My documents are short posts (178–549 characters), not long guides, so a fixed
+sliding window was the wrong shape from the start. My chunker instead packs
+whole paragraphs up to 350 characters and never cuts one, and re-adds the
+document's title to every chunk, since body text here often drops the subject
+("the basement," not "the library basement").
+
+I picked 350 by testing a few ceilings against my real paragraph lengths.
+Below 300, some chunks came out shorter than 150 characters — too small to
+be useful. Above 450, almost nothing split at all, which is just the
+starter's old behavior with a new number. 350 splits only the 11 documents
+that actually needed it.
+
+Overlap is 0 because there's nothing to repair: splits happen between
+paragraphs, not through the middle of one, and every chunk keeps its title.
+
+One thing I changed after testing: `TOP_K`, not the chunk size. The default
+of 5 buried the right chunk under near-duplicate posts (same laundry room,
+same dorm noise complaint), so I lowered it to 3.
 
 ## Sample Chunks
 
@@ -103,10 +127,7 @@ Machines take $1.75 wash, $1.75 dry, app-based. There are eight washers and six 
 Best time to do laundry here is Tuesday or Wednesday morning. Sunday after 6pm you will wait.
 ```
 
-All five above are documents that stayed whole under the 350-character ceiling
-(88 of 88 documents fit one chunk under the starter's numbers; 77 still do under
-mine). For a document the chunker actually split, here are both chunks of
-`transit_shuttle.txt` — the title line is re-prepended to the second chunk
+All five above are documents that stayed whole under the 350-character ceiling (88 of 88 documents fit one chunk under the starter's numbers; 77 still do under mine). For a document the chunker actually split, here are both chunks of `transit_shuttle.txt` — the title line is re-prepended to the second chunk
 because its body never says the word "shuttle":
 
 **Split example, chunk a** — source: `transit_shuttle.txt#0` — produced by: `chunker.py::split_documents`
@@ -130,27 +151,46 @@ It's free with a student ID. The stop outside Fenwick Court is the one that gets
 <!-- One complete question and answer, pasted as text, with the source line
      visible. Milestone 4. -->
 
-**Question:**
+**Question:** How often does the campus shuttle run on weekends?
 
 **Answer:**
 
 ```
+(best distance 0.180, cutoff 0.6)
+
+Based on the documents provided, the campus shuttle runs every 40 minutes on weekends.
+
+Source: `transit_shuttle.txt`
+
+Sources retrieved: course_stat_150_workload.txt, dining_verrill_street_grill.txt, transit_shuttle.txt
 ```
 
 **My relevance cutoff:**
 
-<!-- The number you set in config.py, and how you got there.
+`THRESHOLD = 0.6` in `config.py`.
 
-     You ran five questions your corpus covers and the five in OUT_OF_SCOPE
-     that it clearly doesn't, and wrote down the best distance for each. What
-     did those two groups look like? Where was the gap? Put the actual numbers
-     here — the table below wants all ten rows.
+I ran my five test questions and the five `OUT_OF_SCOPE` questions through `python app.py retrieve` and recorded the best (rank-1) distance for each.
+The two groups didn't overlap:
 
-     Milestone 4. -->
+- **In-scope** best distances: 0.180, 0.202, 0.214, 0.229, 0.306 (worst: 0.306)
+- **Out-of-scope** best distances: 0.825, 0.849, 0.886, 0.891, 0.934 (best: 0.825)
 
-| Question | In corpus? | Best distance |
-| -------- | ---------- | ------------- |
-|          |            |               |
+That's a 0.52-wide empty band between 0.306 and 0.825, with no question from either group landing inside it. I put the cutoff at 0.6, not exactly centered, but with real margin on both sides (0.29 above my worst real question, 0.22
+below my closest fake one), rather than tightening it toward the in-scope side. The five `OUT_OF_SCOPE` questions are all trivially far (everything in this corpus is campus-flavoured, so even Mongolia's capital lands on a history
+course post at 0.825), so a tighter cutoff would pass the same test today without being better tested. The real risk 0.6 has to survive is a question that sounds like the corpus but isn't covered by it, and none of my ten questions test that case, so there's no evidence yet to justify moving off a cutoff that already has room on both sides.
+
+| #  | Question                                                               | In corpus? | Best distance |
+| -- | ---------------------------------------------------------------------- | ---------- | ------------- |
+| 1  | How late can you declare a course pass/fail?                           | yes        | 0.202         |
+| 2  | What happens to leftover dining dollars at the end of spring semester? | yes        | 0.229         |
+| 3  | How is the housing lottery order decided for juniors and seniors?      | yes        | 0.214         |
+| 4  | How often does the campus shuttle run on weekends?                     | yes        | 0.180         |
+| 5  | Why is the library basement full by mid-morning?                       | yes        | 0.306         |
+| 6  | What is the capital of Mongolia?                                       | no         | 0.825         |
+| 7  | How do I change the oil in a diesel engine?                            | no         | 0.934         |
+| 8  | Who won the 1994 World Cup?                                            | no         | 0.886         |
+| 9  | What is the recommended dosage of ibuprofen for a headache?            | no         | 0.849         |
+| 10 | How do I write a for loop in Rust?                                     | no         | 0.891         |
 
 ## How I Used AI
 
@@ -163,9 +203,12 @@ It's free with a student ID. The stop outside Fenwick Court is the one that gets
 
      Milestone 5. -->
 
-**1.**
+**1.** I asked Claude to decide the chunk size and overlap and write down why before touching the chunker, since I'd noticed my documents were short posts, not sectioned guides. Instead of picking a number, it measured the actual paragraph lengths in my corpus (median 112 characters, documents 178-549) andsimulated a title-prefixed, paragraph-packing strategy at several ceilings before proposing 350/0/150. I didn't just take those numbers; after the real
+`split_documents` was written, I had it re-run retrieval on my five questions and the smoke test before I'd accept the change, which is what caught that the shuttle question's distance actually improved (0.411 → 0.180) rather than
+assuming the simulation would carry over exactly.
 
-**2.**
+**2.** I asked it to adjust `TOP_K`, warned that too few loses the right chunk and too many buries it in loosely related material. It didn't just guess a number either; it swept k from 3 to 10 against all five test questions and a laundry-price question I'd flagged earlier as a hazard case, and showed me that the right chunk was always rank 1 no matter the k, while the *noise* grew: at k=5 a library question pulled in four dorm-noise posts that all share
+one recycled sentence about the library, and the laundry question pulled in three other buildings' prices. I used that evidence to lower `TOP_K` from the starter's 5 to 3 rather than leaving it at the default, and kept one spare slot above rank 1 instead of cutting to 2, since none of my questions actually needed the extra headroom but I didn't want zero margin either.
 
 <!-- ── Stretch features ─────────────────────────────────────────────────────
      Doing one? Say so here BEFORE you start. A feature this README never

@@ -79,9 +79,19 @@ TOP_K = 3               # how many chunks to pull back per question
 #
 # LOWER IS BETTER: 0.3 is a close match, 0.9 is unrelated.
 #
-# 0.6 is a reasonable starting point, not a right answer. Milestone 4 has you
-# measure your own two groups of distances and put the cutoff in the gap.
-# Most corpora land somewhere between 0.45 and 0.75.
+# Measured against my five test questions and the five in OUT_OF_SCOPE
+# (post-Milestone-3 chunker, TOP_K=3):
+#   in-scope best distances : 0.180, 0.202, 0.214, 0.229, 0.306
+#   out-of-scope distances  : 0.825, 0.849, 0.886, 0.891, 0.934
+# Worst in-scope is 0.306, best out-of-scope is 0.825 — a 0.52-wide empty
+# band. Kept 0.6 rather than tightening it: it already sits with margin on
+# both sides (0.29 above the worst real question, 0.22 below the closest
+# fake one), and the five OUT_OF_SCOPE questions are all trivially far
+# (everything in this corpus is campus-flavoured, so even off-topic
+# questions land around 0.85-0.93). The real risk 0.6 has to survive is a
+# question that sounds like the corpus but isn't covered by it — none of
+# my ten questions test that, so there's no evidence to justify moving off
+# a cutoff with room on both sides.
 THRESHOLD = 0.6
 
 
