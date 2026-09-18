@@ -80,24 +80,86 @@ def fallback_split(
     return chunks
 
 
+def _blocks(text: str) -> list[str]:
+    """A document's blank-line-separated blocks, empties dropped."""
+    return [b.strip() for b in text.split("\n\n") if b.strip()]
+
+
 def split_documents(documents: list[Document]) -> list[Chunk]:
     """
-    Split documents into chunks. ⚠️ REPLACE THE BODY OF THIS IN MILESTONE 3.
+    Title-prefixed, paragraph-packed chunks. Never cuts a paragraph.
 
-    Right now it just calls the fallback. That is the plain, generic behaviour
-    the brief is talking about.
+    `campus_life` is 88 short posts, not guides: 178–549 characters each
+    (median 305), a title line of ~26, and one to four body paragraphs that
+    each carry a self-contained fact. Two things follow from that, and this
+    function is built out of them.
 
-    When you write your own strategy, set `produced_by` to
-    "chunker.py::split_documents" so your README's Sample Chunks section names
-    the right function. `app.py chunks` prints that string for you.
+    First, the title line is the only topic label a chunk gets. Body sentences
+    drop the subject — the advice line in `course_cs_210.txt` never says
+    "CS 210", and `study_library_hours.txt` says "the basement" without saying
+    "library" — so every chunk gets the title prepended. A chunk that loses it
+    is close to unretrievable.
 
-    Things worth thinking about before you write any code:
-      - Are your documents short posts or long guides?
-      - Is the useful information in one sentence, or spread over a paragraph?
-      - Would splitting on paragraph breaks keep more thoughts intact than
-        splitting on a character count?
+    Second, `config.CHUNK_SIZE` is a ceiling here rather than a window. Whole
+    paragraphs are packed until the next one would exceed it, so a post shorter
+    than the ceiling stays one chunk and nothing is ever cut mid-sentence. That
+    is the opposite of `fallback_split`, which indexes by character and will
+    happily cut mid-word.
+
+    Groups that would come out under `config.CHUNK_MIN` are merged back into
+    their predecessor rather than emitted, which is what keeps a trailing
+    one-line paragraph from becoming an orphan chunk. A single paragraph longer
+    than the ceiling is kept whole and over-length on purpose: cutting it is
+    the failure this function exists to avoid.
     """
-    return fallback_split(documents)
+    ceiling = config.CHUNK_SIZE
+    floor = config.CHUNK_MIN
+
+    chunks: list[Chunk] = []
+    for doc in documents:
+        blocks = _blocks(doc.text)
+        if not blocks:
+            continue
+
+        title, bodies = blocks[0], blocks[1:]
+        if not bodies:
+            # Title-only document — keep it as-is rather than invent a body.
+            bodies = [title]
+
+        def assemble(group: list[str]) -> str:
+            return f"{title}\n\n" + "\n\n".join(group)
+
+        # Pack whole paragraphs up to the ceiling.
+        groups: list[list[str]] = []
+        current: list[str] = []
+        for body in bodies:
+            if current and len(assemble(current + [body])) > ceiling:
+                groups.append(current)
+                current = [body]
+            else:
+                current.append(body)
+        if current:
+            groups.append(current)
+
+        # Merge anything under the floor back into the chunk before it.
+        packed: list[list[str]] = []
+        for group in groups:
+            if packed and len(assemble(group)) < floor:
+                packed[-1] = packed[-1] + group
+            else:
+                packed.append(group)
+
+        for index, group in enumerate(packed):
+            chunks.append(
+                Chunk(
+                    text=assemble(group),
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents",
+                )
+            )
+
+    return chunks
 
 
 def describe(chunks: list[Chunk]) -> str:
