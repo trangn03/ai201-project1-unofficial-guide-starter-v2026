@@ -235,13 +235,42 @@ one recycled sentence about the library, and the laundry question pulled in thre
 
      Milestone 1. -->
 
-| Criterion                              | Target | Run 1 | Run 2 | Run 3 | Verdict |
-| -------------------------------------- | ------ | ----- | ----- | ----- | ------- |
-| 1. Retrieved chunk contains the answer | 4 of 5 |       |       |       |         |
-| 2. Every answer names a source         | 5 of 5 |       |       |       |         |
-| 3. Gate stops out-of-corpus questions  | 4 of 5 |       |       |       |         |
-| 4.                                     |        |       |       |       |         |
-| 5.                                     |        |       |       |       |         |
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
+| 4. |  |  |  |  |  |
+| 5. |  |  |  |  |  |
+
+Source: `results/run_2026-09-21_0759_before.md`, produced by `run_eval.py::main`.
+
+Criterion 1 — for each question, the run log's "Sources retrieved" line
+includes the document that actually answers the question, and the generated
+text states that document's fact correctly, so all 5 count as containing the
+answer in every run (retrieval is deterministic; only phrasing changes
+between runs):
+
+| Question | Answering doc retrieved? |
+|---|---|
+| Pass/fail deadline | admin_pass_fail_option.txt — yes |
+| Dining dollars | admin_dining_dollars.txt — yes |
+| Housing lottery | admin_housing_lottery.txt — yes |
+| Shuttle frequency | transit_shuttle.txt — yes |
+| Library basement | study_library_hours.txt — yes |
+
+Criterion 2 — every one of the 15 generated answers (5 questions × 3 runs)
+names a source, in one of three phrasings (`Source: file.txt`,
+`(file.txt)`, `(source: file.txt)`), so it's 5/5 in every run.
+
+Criterion 3 — from the out-of-scope table in the same run log: 5 of 5
+refused (distances 0.825–0.934, all above the 0.6 cutoff), measured once
+since the gate is a deterministic comparison, not a model call.
+
+Rows 4 and 5 aren't in this run log — criterion 4 is measured from
+`python app.py chunks -n 5` and criterion 5 needs a check of whether the
+named source is the *correct* one per document, which `run_eval.py` doesn't
+score without `scorer.py`. Those still need their own evidence.
 
 <!-- Underneath, paste the REAL output for each criterion from one of your
      runs — the actual text your system produced, not a description of it.
