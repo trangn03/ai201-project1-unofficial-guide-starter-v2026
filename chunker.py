@@ -85,7 +85,11 @@ def _blocks(text: str) -> list[str]:
     return [b.strip() for b in text.split("\n\n") if b.strip()]
 
 
-def split_documents(documents: list[Document]) -> list[Chunk]:
+def split_documents(
+    documents: list[Document],
+    chunk_size: int | None = None,
+    chunk_min: int | None = None,
+) -> list[Chunk]:
     """
     Title-prefixed, paragraph-packed chunks. Never cuts a paragraph.
 
@@ -112,8 +116,8 @@ def split_documents(documents: list[Document]) -> list[Chunk]:
     than the ceiling is kept whole and over-length on purpose: cutting it is
     the failure this function exists to avoid.
     """
-    ceiling = config.CHUNK_SIZE
-    floor = config.CHUNK_MIN
+    ceiling = chunk_size or config.CHUNK_SIZE
+    floor = chunk_min or config.CHUNK_MIN
 
     chunks: list[Chunk] = []
     for doc in documents:
