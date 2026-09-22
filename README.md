@@ -240,8 +240,8 @@ one recycled sentence about the library, and the laundry question pulled in thre
 | 1. Retrieved chunk contains the answer | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 2. Every answer names a source | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
 | 3. Gate stops out-of-corpus questions | 4 of 5 | 5/5 | 5/5 | 5/5 | MET |
-| 4. |  |  |  |  |  |
-| 5. |  |  |  |  |  |
+| 4. Chunks keep title line and stay whole | 4 of 5, none <150 chars | 5/5 | 5/5 | 5/5 | MET |
+| 5. Named source is the one that actually holds the answer | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
 Source: `results/run_2026-09-21_0759_before.md`, produced by `run_eval.py::main`.
 
@@ -267,14 +267,36 @@ Criterion 3 — from the out-of-scope table in the same run log: 5 of 5
 refused (distances 0.825–0.934, all above the 0.6 cutoff), measured once
 since the gate is a deterministic comparison, not a model call.
 
-Rows 4 and 5 aren't in this run log — criterion 4 is measured from
-`python app.py chunks -n 5` and criterion 5 needs a check of whether the
-named source is the *correct* one per document, which `run_eval.py` doesn't
-score without `scorer.py`. Those still need their own evidence.
+Criterion 4 — from `python app.py chunks -n 5` (chunks produced by
+`chunker.py::split_documents`): all 5 sampled chunks begin with their
+source document's title line, none ends or begins mid-sentence, and the
+shortest is well above the 150-character floor. Deterministic like
+criterion 3, so one measurement covers all three run columns. (Full set
+of 5 already pasted in the Sample Chunks section above — same output,
+chunking doesn't vary between runs.)
 
-<!-- Underneath, paste the REAL output for each criterion from one of your
-     runs — the actual text your system produced, not a description of it.
-     Name the file and function that produced it. -->
+Criterion 5 — for each of the 5 test questions, the source named in the
+answer is the document that actually contains the fact (verified against
+each source file directly), 5/5 in every run — see the table under
+criterion 1 for per-question detail.
+
+I additionally tested the laundry hazard case named in criteria.md:
+"How much does laundry cost in Morrow House?"
+
+```
+(best distance 0.112, cutoff 0.6)
+
+Laundry in Morrow House costs $1.50 to wash and $1.25 to dry (using either coin or card).
+
+Sources: `housing_morrow_house_laundry.txt` and `housing_morrow_house.txt`
+
+Sources retrieved: housing_morrow_house.txt, housing_morrow_house_laundry.txt
+```
+
+The answer named `housing_morrow_house_laundry.txt` and gave $1.50 wash /
+$1.25 dry, matching that file exactly, with no other building's laundry
+document among the top-3 retrieved (`app.py ask --show-prompt`, run
+manually, not part of the automated 5).
 
 ## Verdicts
 
@@ -289,11 +311,11 @@ score without `scorer.py`. Those still need their own evidence.
 
 | # | Criterion | Verdict | How I decided |
 | - | --------- | ------- | ------------- |
-| 1 |           |         |               |
-| 2 |           |         |               |
-| 3 |           |         |               |
-| 4 |           |         |               |
-| 5 |           |         |               |
+| 1 | Retrieved chunks contain the answer | MET | Target was 4 of 5; came out 5/5 in all three runs, not just once — the two multi-paragraph documents I flagged as the risk (shuttle, library) retrieved correctly every run. |
+| 2 | Every answer names a source | MET | Target was 5 of 5; came out 5/5 in all three runs. |
+| 3 | Gate stops out-of-corpus questions | MET | Target was 4 of 5; came out 5/5, measured once since the gate is a deterministic comparison, not something that can vary between runs. |
+| 4 | Chunks keep title line and stay whole | MET | Target was 4 of 5, none under 150 chars; came out 5/5, deterministic like criterion 3 — chunking doesn't change between runs of the same corpus. |
+| 5 | Named source is the one that actually holds the answer | MET | Target was 5 of 5; came out 5/5 in all three runs, plus the Morrow House laundry hazard case I tested separately also named the correct document and price. |
 
 ## Diagnoses
 
