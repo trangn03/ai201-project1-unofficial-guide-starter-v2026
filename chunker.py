@@ -166,6 +166,56 @@ def split_documents(
     return chunks
 
 
+def split_documents_by_paragraph(
+    documents: list[Document],
+    chunk_min: int | None = None,
+) -> list[Chunk]:
+    """
+    One paragraph per chunk, no packing. Compares against `split_documents`
+    to test whether packing multiple facts into one chunk (the ceiling logic)
+    helps or hurts retrieval on the multi-paragraph documents.
+    """
+    floor = chunk_min or config.CHUNK_MIN
+
+    chunks: list[Chunk] = []
+    for doc in documents:
+        blocks = _blocks(doc.text)
+        if not blocks:
+            continue
+
+        title, bodies = blocks[0], blocks[1:]
+        if not bodies:
+            bodies = [title]
+
+        def assemble(group: list[str]) -> str:
+            return f"{title}\n\n" + "\n\n".join(group)
+
+        # Every paragraph is its own group — no packing toward a ceiling.
+        groups: list[list[str]] = [[body] for body in bodies]
+
+        # Still merge anything under the floor back into the previous group,
+        # same as split_documents — a one-line trailing paragraph shouldn't
+        # become an orphan chunk here either.
+        packed: list[list[str]] = []
+        for group in groups:
+            if packed and len(assemble(group)) < floor:
+                packed[-1] = packed[-1] + group
+            else:
+                packed.append(group)
+
+        for index, group in enumerate(packed):
+            chunks.append(
+                Chunk(
+                    text=assemble(group),
+                    source=doc.source,
+                    index=index,
+                    produced_by="chunker.py::split_documents_by_paragraph",
+                )
+            )
+
+    return chunks
+
+
 def describe(chunks: list[Chunk]) -> str:
     """A one-line summary, printed after indexing."""
     if not chunks:

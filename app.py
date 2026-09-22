@@ -32,7 +32,7 @@ def cmd_corpora(args):
 
 def cmd_index(args):
     from ingest import load_documents, describe as describe_docs
-    from chunker import split_documents, describe as describe_chunks
+    from chunker import split_documents, split_documents_by_paragraph, describe as describe_chunks
     from store import build_index
 
     corpus = args.corpus or config.CORPUS
@@ -43,7 +43,8 @@ def cmd_index(args):
     documents = load_documents(corpus)
     print(f"  loaded   {describe_docs(documents)}")
 
-    chunks = split_documents(documents)
+    chunk_fn = split_documents_by_paragraph if args.chunker == "paragraph" else split_documents
+    chunks = chunk_fn(documents)
     print(f"  chunked  {describe_chunks(chunks)}")
 
     print(f"  embedding {len(chunks)} chunks (first run downloads the model)...")
@@ -337,6 +338,16 @@ def build_parser():
     sub.add_parser("corpora", help="list available corpora").set_defaults(func=cmd_corpora)
 
     p_index = sub.add_parser("index", help="build the search index")
+    p_index.add_argument(
+        "--chunker",
+        choices=["packed", "paragraph"],
+        default="packed",
+        help=(
+            "which chunker.py strategy to index with: 'packed' is "
+            "split_documents (default), 'paragraph' is "
+            "split_documents_by_paragraph (unit 2 comparison)"
+        ),
+    )
     p_index.set_defaults(func=cmd_index)
 
     p_chunks = sub.add_parser("chunks", help="print sample chunks (Milestone 3)")
