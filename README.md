@@ -234,7 +234,7 @@ which came back clean, before accepting it as a real difference between the two 
 | 1. Retrieved chunk contains the answer                    | 4 of 5                  | 5/5   | 5/5   | 5/5   | MET     |
 | 2. Every answer names a source                            | 5 of 5                  | 5/5   | 5/5   | 5/5   | MET     |
 | 3. Gate stops out-of-corpus questions                     | 4 of 5                  | 5/5   | 5/5   | 5/5   | MET     |
-| 4. Chunks keep title line and stay whole                  | 4 of 5, none <150 chars | 5/5   | 5/5   | 5/5   | MET     |
+| 4. Chunks keep title line and stay whole                  | 5 of 5, none <150 chars | 5/5   | 5/5   | 5/5   | MET     |
 | 5. Named source is the one that actually holds the answer | 5 of 5                  | 5/5   | 5/5   | 5/5   | MET     |
 
 Source: `results/run_2026-09-21_0759_before.md`, produced by `run_eval.py::main`.
@@ -289,7 +289,7 @@ The answer named `housing_morrow_house_laundry.txt` and gave $1.50 wash / $1.25 
 | 1 | Retrieved chunks contain the answer                    | MET     | Target was 4 of 5; came out 5/5 in all three runs, not just once, the two multi-paragraph documents I flagged as the risk (shuttle, library) retrieved correctly every run. |
 | 2 | Every answer names a source                            | MET     | Target was 5 of 5; came out 5/5 in all three runs.                                                                                                                            |
 | 3 | Gate stops out-of-corpus questions                     | MET     | Target was 4 of 5; came out 5/5, measured once since the gate is a deterministic comparison, not something that can vary between runs.                                        |
-| 4 | Chunks keep title line and stay whole                  | MET     | Target was 4 of 5, none under 150 chars; came out 5/5, deterministic like criterion 3, chunking doesn't change between runs of the same corpus.                             |
+| 4 | Chunks keep title line and stay whole                  | MET     | Target was 5 of 5, none under 150 chars; came out 5/5, deterministic like criterion 3, chunking doesn't change between runs of the same corpus.                             |
 | 5 | Named source is the one that actually holds the answer | MET     | Target was 5 of 5; came out 5/5 in all three runs, plus the Morrow House laundry hazard case I tested separately also named the correct document and price.                   |
 
 ## Diagnoses
@@ -328,7 +328,7 @@ Source: `results/run_2026-09-21_2112_after.md`, produced by `run_eval.py::main`,
 | 1. Retrieved chunk contains the answer | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
 | 2. Every answer names a source         | 5 of 5 | 5/5   | 5/5   | 5/5   | MET     |
 | 3. Gate stops out-of-corpus questions  | 4 of 5 | 5/5   | 5/5   | 5/5   | MET     |
-| 4. Chunks keep title line and stay whole | 4 of 5, none <150 chars | 0/5 | 0/5 | 0/5 | MISSED |
+| 4. Chunks keep title line and stay whole | 5 of 5, none <150 chars | 0/5 | 0/5 | 0/5 | MISSED |
 | 5. Named source is the one that actually holds the answer | 5 of 5 | 5/5 | 5/5 | 5/5 | MET |
 
 Criterion 4 verdict is 0/5 rather than a partial count because it isn't about the 5 sampled chunks specifically, it's that the corpus now produces 8 chunks under the 150-character floor at all (checked directly against every chunk `split_documents_by_paragraph` produces, not just a sample of 5):
